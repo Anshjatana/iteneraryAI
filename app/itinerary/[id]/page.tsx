@@ -4,30 +4,33 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format } from "date-fns";
-
-
 
 interface Overview {
   total_budget: string;
-  travel_dates: string;
-  info: string;
+  highlights: string[];
+  best_time_to_visit: string;
+  travel_tips: string[];
+}
+
+interface Activity {
+  name: string;
+  description: string;
+  duration: string;
+  cost: string;
 }
 
 interface Day {
-  date: string;
-  activities: any;
+  morning_activity: Activity;
+  afternoon_activity: Activity;
+  evening_activity: Activity;
 }
 
 interface Itinerary {
   _id: string;
-  title: string;
   destination: string;
-  startDate: string;
-  endDate: string;
   travelGroup: string;
   recommendations: {
-    overview: Overview[];
+    overview: Overview;
     days: Day[];
   };
 }
@@ -57,76 +60,102 @@ export default function ItineraryPage() {
   }, [params.id]);
 
   if (!itinerary) {
-    return <div>Loading...</div>;
+    return <div>Loading... ⏳</div>;
   }
+
+  const { destination, travelGroup, recommendations } = itinerary;
+  const { overview, days } = recommendations;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="text-3xl">{itinerary.destination}</CardTitle>
+          <CardTitle className="text-3xl">🌍 {destination}</CardTitle>
           <p className="text-muted-foreground">
-            {format(new Date(itinerary.startDate), "PPP")} -{" "}
-            {format(new Date(itinerary.endDate), "PPP")}
+            👥 Travel Group: {travelGroup} | 📅 Duration: {days.length} days
           </p>
         </CardHeader>
       </Card>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="daily">Daily Schedule</TabsTrigger>
-          <TabsTrigger value="map">Map</TabsTrigger>
+          <TabsTrigger value="overview">📖 Overview</TabsTrigger>
+          <TabsTrigger value="daily">📆 Daily Schedule</TabsTrigger>
+          <TabsTrigger value="tips">💡 Travel Tips</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview">
-  <h3 className="text-lg font-semibold">Travel Group: {itinerary.travelGroup}</h3>
-  <div className="space-y-4 mt-4">
-    <Card>
-      <CardHeader>
-        <CardTitle>Overview</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p><strong>Total Budget:</strong> {itinerary.recommendations.overview.total_budget}</p>
-        <p><strong>Travel Dates:</strong> {itinerary.recommendations.overview.travel_dates}</p>
-        <p><strong>Info:</strong> {itinerary.recommendations.overview.info}</p>
-      </CardContent>
-    </Card>
-  </div>
-</TabsContent>
-
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>🔎 Highlights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-6 space-y-2">
+                  {overview.highlights.map((highlight, index) => (
+                    <li key={index}>{highlight}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>💵 Total Budget</CardTitle>
+              </CardHeader>
+              <CardContent>{overview.total_budget}</CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>🗓️ Best Time to Visit</CardTitle>
+              </CardHeader>
+              <CardContent>{overview.best_time_to_visit}</CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* Daily Schedule Tab */}
         <TabsContent value="daily">
           <div className="space-y-4">
-            {itinerary.recommendations.days.map((day, index) => (
+            {days.map((day, index) => (
               <Card key={index}>
                 <CardHeader>
-                  <CardTitle>Day {index + 1}</CardTitle>
-                  {/* <p className="text-muted-foreground">{format(new Date(day.date), "PPP")}</p> */}
+                  <CardTitle>📅 Day {index + 1}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {day.activities.map((place, placeIndex) => (
-                      <li key={placeIndex}>
-                        <p className="text-muted-foreground">{place}</p>
-                      </li>
-                    ))}
-                  </ul>
+                  {["morning_activity", "afternoon_activity", "evening_activity"].map((timeOfDay) => {
+                    const activity = day[timeOfDay as keyof Day] as Activity;
+                    return (
+                      <div key={timeOfDay} className="mb-4">
+                        <h4 className="font-semibold capitalize">{timeOfDay.replace("_", " ")}</h4>
+                        <p>
+                          <strong>📍 {activity.name}</strong>: {activity.description}
+                        </p>
+                        <p>
+                          <strong>⏳ Duration:</strong> {activity.duration} | <strong>💰 Cost:</strong>{" "}
+                          {activity.cost}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
 
-        {/* Map Tab */}
-        <TabsContent value="map">
+        {/* Travel Tips Tab */}
+        <TabsContent value="tips">
           <Card>
-            <CardContent className="p-6">
-              <div className="h-[600px] bg-muted rounded-lg flex items-center justify-center">
-                <p className="text-center">Map view coming soon</p>
-              </div>
+            <CardHeader>
+              <CardTitle>💡 Travel Tips</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc pl-6 space-y-2">
+                {overview.travel_tips.map((tip, index) => (
+                  <li key={index}>{tip}</li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         </TabsContent>

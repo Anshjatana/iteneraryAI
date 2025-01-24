@@ -1,52 +1,56 @@
-'use client';
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import GooglePlacesAutocomplete from "react-google-places-autocomplete";
+
+interface FormData {
+  userId: string;
+  destination: string;
+  placeId: string;
+  numberOfDays: number; // New field for number of days
+  travelGroup: string;
+  interests: string[];
+  budget: string;
+}
+
+interface Place {
+  label: string;
+  value: {
+    place_id: string;
+  };
+}
 
 export default function CreateTrip() {
   const router = useRouter();
   const { data: session } = useSession();
   const [place, setPlace] = useState<Place | null>(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    userId:'',
+    userId: "",
     destination: "",
     placeId: "",
-    startDate: null,
-    endDate: null,
+    numberOfDays: 1, // Added field for number of days
     travelGroup: "",
-    interests: ["food"],
+    interests: ["explore"],
     budget: "",
   });
-  
-
-  interface FormData {
-    userId: string;
-    destination: string;
-    placeId: string;
-    startDate: Date | null;
-    endDate: Date | null;
-    travelGroup: string;
-    interests: string[];
-    budget: string;
-  }
-
-  interface Place {
-    label: string;
-    value: {
-      place_id: string;
-    };
-  }
 
   const handleInputChange = (name: keyof FormData, value: any) => {
     setFormData({
@@ -55,35 +59,38 @@ export default function CreateTrip() {
     });
   };
 
-  const handlePlaceSelect = async (place:Place) => {
+  const handlePlaceSelect = async (place: Place) => {
     if (place) {
-      try {
-        // Extract location data (latitude and longitude)
-        // Update formData with the selected place details
-        setFormData({
-          ...formData,
-          userId: Date.now().toString(),
-          destination: place.label, // Use the label for the destination name
-          placeId: place.value.place_id, // Set the place_id
-        });
-      } catch (error) {
-        console.error("Error fetching place details:", error);
-      }
+      setFormData({
+        ...formData,
+        userId: session?.user?.email || "",
+        destination: place.label,
+        placeId: place.value.place_id,
+      });
     }
   };
-  
 
-  const handleSubmit = async (e) => {
+  interface HandleSubmitEvent extends React.FormEvent<HTMLFormElement> {}
+
+  const handleSubmit = async (e: HandleSubmitEvent) => {
     e.preventDefault();
     console.log("Form data:", formData);
-    
 
-    if (!formData.userId || !formData.destination || !formData.placeId || !formData.startDate || !formData.endDate || !formData.travelGroup || !formData.interests.length || !formData.budget) {
-      console.error("Please complete all required fields.");
+    if (
+      !formData.userId ||
+      !formData.destination ||
+      !formData.placeId ||
+      !formData.numberOfDays ||
+      !formData.travelGroup ||
+      !formData.interests.length ||
+      !formData.budget
+    ) {
+      alert("Please complete all required fields.");
       return;
     }
 
     try {
+      setLoading(true);
       const response = await fetch("http://localhost:8000/api/itineraries", {
         method: "POST",
         headers: {
@@ -94,7 +101,7 @@ export default function CreateTrip() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data: { _id: string } = await response.json();
         console.log("Itinerary created:", data);
         router.push(`/itinerary/${data._id}`);
       } else {
@@ -102,142 +109,142 @@ export default function CreateTrip() {
       }
     } catch (error) {
       console.error("Failed to create itinerary:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
     }
   };
 
+  function cn(...classes: string[]): string {
+    return classes.filter(Boolean).join(" ");
+  }
   return (
+    <>
+    {
+      loading && (
+        <div className="fixed z-[100] inset-0 flex flex-col gap-2 items-center justify-center bg-black bg-opacity-70">
+          <div className="animate-spin z-[100] rounded-full h-10 w-10 border-t-2 border-l-2 border-b-2 border-white"></div>
+            <p className="text-lg font-medium z-[100] text-white text-center">Hold on, creating itinerary...</p>
+        </div>
+      )
+    }
     <div className="container mx-auto px-4 py-8">
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl">Plan Your Next Trip ✈️</CardTitle>
-        <CardDescription className="text-md text-gray-400 " >Just Provide some basic information, and our trip planner will generate a customized itinerary based on your preference!</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="destination" className="text-sm font-medium">
-              Destination 📍
-            </label>
-            <GooglePlacesAutocomplete
-              apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-              selectProps={{
-                value: place,
-                onChange: (v) => {
-                  setPlace(v);
-                  handlePlaceSelect(v);
-                },
-                placeholder: "Search for a destination...",
-              }}
-            />
-          </div>
-  
-          <div className="grid grid-cols-2 gap-4">
-            {(["startDate", "endDate"] as const).map((field) => (
-              <div key={field} className="space-y-2">
-                <label className="text-sm font-medium capitalize">
-                  {field.replace("Date", " Date")} 📅
-                </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData[field] && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData[field]
-                        ? format(new Date(formData[field]), "PPP")
-                        : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData[field] || undefined}
-                      onSelect={(date) => date && handleInputChange(field, date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            ))}
-          </div>
-  
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Travel Group 👥</label>
-            <Select
-              value={formData.travelGroup}
-              onValueChange={(value) => handleInputChange("travelGroup", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select travel group" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Solo Traveler 🧳</SelectItem>
-                <SelectItem value="couple">Couple 💑</SelectItem>
-                <SelectItem value="family">Family 👨‍👩‍👧‍👦</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-  
-          <div className="space-y-2">
-  <label className="text-sm font-medium">Interests 🧳</label>
-  <div className="flex flex-wrap gap-2">
-    {[
-      { value: "food", label: "Food 🍽️" },
-      { value: "explore", label: "Explore 🧭" },
-      { value: "markets", label: "Markets 🛍️" },
-      { value: "culture", label: "Culture 🎭" },
-    ].map((interest) => (
-      <button
-        key={interest.value}
-        type="button"
-        className={cn(
-          "px-4 py-2 rounded-lg border font-medium",
-          formData.interests.includes(interest.value)
-            ? "bg-black text-white border-black"
-            : "bg-white text-gray-700 border-gray-300"
-        )}
-        onClick={() => {
-          const updatedInterests = formData.interests.includes(interest.value)
-            ? formData.interests.filter((i) => i !== interest.value)
-            : [...formData.interests, interest.value];
-          handleInputChange("interests", updatedInterests);
-        }}
-      >
-        {interest.label}
-      </button>
-    ))}
-  </div>
-</div>
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl">Plan Your Next Trip ✈️</CardTitle>
+          <CardDescription className="text-md text-gray-400 ">
+            Just Provide some basic information, and our trip planner will
+            generate a customized itinerary based on your preference!
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="destination" className="text-sm font-medium">
+                Destination 📍
+              </label>
+              <GooglePlacesAutocomplete
+                apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                selectProps={{
+                  value: place,
+                  onChange: (v) => {
+                    setPlace(v);
+                    if (v) handlePlaceSelect(v as Place);
+                  },
+                  placeholder: "Search for a destination...",
+                }}
+              />
+            </div>
 
-  
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Budget 💰</label>
-            <Select
-              value={formData.budget}
-              onValueChange={(value) => handleInputChange("budget", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select budget range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cheap">Budget Friendly 💵</SelectItem>
-                <SelectItem value="mid-range">Mid Range 💳</SelectItem>
-                <SelectItem value="luxury">Luxury 🏰</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-  
-          <Button type="submit" className="w-full">
-            Create Itinerary 📝
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  </div>
-  
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Number of Days 🗓️</label>
+              <Input
+                type="number"
+                value={formData.numberOfDays}
+                onChange={(e) =>
+                  handleInputChange("numberOfDays", e.target.value)
+                }
+                min={1}
+                placeholder="Enter number of days"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Travel Group 👥</label>
+              <Select
+                value={formData.travelGroup}
+                onValueChange={(value) =>
+                  handleInputChange("travelGroup", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select travel group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">Solo Traveler 🧳</SelectItem>
+                  <SelectItem value="couple">Couple 💑</SelectItem>
+                  <SelectItem value="family">Family 👨‍👩‍👧‍👦</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Interests 🧳</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "food", label: "Food 🍽️" },
+                  { value: "explore", label: "Explore 🧭" },
+                  { value: "markets", label: "Markets 🛍️" },
+                  { value: "culture", label: "Culture 🎭" },
+                ].map((interest) => (
+                  <Button
+                    key={interest.value}
+                    type="button"
+                    className={cn(
+                      "px-4 py-2 rounded-lg border font-medium",
+                      formData.interests.includes(interest.value)
+                        ? "bg-black text-white border-black"
+                        : "bg-white hover:text-black hover:bg-gray-200 text-gray-700 border-gray-300"
+                    )}
+                    onClick={() => {
+                      const updatedInterests = formData.interests.includes(
+                        interest.value
+                      )
+                        ? formData.interests.filter((i) => i !== interest.value)
+                        : [...formData.interests, interest.value];
+                      handleInputChange("interests", updatedInterests);
+                    }}
+                  >
+                    {interest.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Budget 💰</label>
+              <Select
+                value={formData.budget}
+                onValueChange={(value) => handleInputChange("budget", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select budget range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cheap">Budget Friendly 💵</SelectItem>
+                  <SelectItem value="mid-range">Mid Range 💳</SelectItem>
+                  <SelectItem value="luxury">Luxury 🏰</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" className="w-full">
+              Create Itinerary 📝
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+    </>
   );
 }
