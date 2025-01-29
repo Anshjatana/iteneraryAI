@@ -144,7 +144,7 @@ export default function CreateTrip() {
                 Destination 📍
               </label>
               <GooglePlacesAutocomplete
-                apiKey={process.env.GOOGLE_MAPS_API_KEY}
+                apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                 selectProps={{
                   value: place,
                   onChange: (v) => {
