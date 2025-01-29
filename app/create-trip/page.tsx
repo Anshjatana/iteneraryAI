@@ -97,6 +97,7 @@ export default function CreateTrip() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`,
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
