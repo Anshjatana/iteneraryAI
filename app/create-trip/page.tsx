@@ -91,7 +91,7 @@ export default function CreateTrip() {
 
     try {
       setLoading(true);
-      const response = await fetch("https://be-itenerary-ai.vercel.app/api/itineraries", {
+      const response = await fetch("https://cors-anywhere.herokuapp.com/https://be-itenerary-ai.vercel.app/api/itineraries", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
