@@ -1,14 +1,26 @@
 "use client";
 
-import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import SigninDialog from "@/components/SigninDialog";
 
 export default function Home() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const [openDialog, setOpenDialog] = useState(false);
+
+
+  const handleButtonClick = () => {
+    if (status === "authenticated") {
+      router.push("/create-trip");
+    } else {
+      setOpenDialog(true);
+  }
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-muted">
@@ -24,23 +36,12 @@ export default function Home() {
         {/* Create Trip Button */}
         <Button 
           size="lg" 
-          className="mb-8"
-          onClick={() => router.push("/create-trip")}
+          className="mb-4"
+          onClick={handleButtonClick}
         >
           Create New Trip
         </Button>
         
-        {/* Search Bar */}
-        <div className="flex max-w-xl mx-auto gap-2">
-          <Input 
-            placeholder="Where do you want to go?" 
-            className="h-12"
-          />
-          <Button className="h-12" size="lg">
-            <Search className="mr-2 h-5 w-5" />
-            Search
-          </Button>
-        </div>
       </section>
 
       {/* Featured Destinations */}
@@ -83,17 +84,18 @@ export default function Home() {
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold mb-8">Discover Your Interests</h2>
         <Tabs defaultValue="food" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="food">Food</TabsTrigger>
-            <TabsTrigger value="explore">Explore</TabsTrigger>
-            <TabsTrigger value="monuments">Monuments</TabsTrigger>
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="food">🍽️ Food</TabsTrigger>
+            <TabsTrigger value="explore">🌎 Explore</TabsTrigger>
+            <TabsTrigger value="monuments">🏛️ Monuments</TabsTrigger>
           </TabsList>
           <TabsContent value="food" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Local Cuisine</CardTitle>
+                  <CardTitle>🍴 Local Cuisine</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>Discover the best local restaurants and street food spots.</p>
@@ -101,7 +103,7 @@ export default function Home() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Food Tours</CardTitle>
+                  <CardTitle>🚶‍♂️ Food Tours</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>Join guided food tours to experience authentic flavors.</p>
@@ -113,7 +115,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Hidden Gems</CardTitle>
+                  <CardTitle>🔍 Hidden Gems</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>Explore off-the-beaten-path locations and local favorites.</p>
@@ -121,7 +123,7 @@ export default function Home() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Adventure Activities</CardTitle>
+                  <CardTitle>🌄 Adventure Activities</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>Find exciting outdoor activities and adventures.</p>
@@ -133,7 +135,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Historical Sites</CardTitle>
+                  <CardTitle>🏰 Historical Sites</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>Visit iconic landmarks and historical monuments.</p>
@@ -141,7 +143,7 @@ export default function Home() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Guided Tours</CardTitle>
+                  <CardTitle>📜 Guided Tours</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>Book expert-guided tours of famous monuments.</p>
@@ -151,6 +153,11 @@ export default function Home() {
           </TabsContent>
         </Tabs>
       </section>
+      {/* Sign In Dialog */
+      openDialog && (
+        <SigninDialog openDialog={openDialog} setOpenDialog={setOpenDialog} />
+      )
+      }
     </main>
   );
 }

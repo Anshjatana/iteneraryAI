@@ -2,15 +2,26 @@
 
 import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogDescription, DialogHeader } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function SignIn() {
-  const { data: session, status } = useSession();
-  const [openDialog, setOpenDialog] = useState(false);
-  
+interface SignInProps {
+  openDialog: boolean;
+  setOpenDialog: (open: boolean) => void;
+}
+
+
+export default function SignIn({ openDialog, setOpenDialog }: SignInProps) {
+    const { data: session, status } = useSession();
+    
+    // Close dialog when user signs in
+    useEffect(() => {
+      if (status === 'authenticated') {
+        setOpenDialog(false);
+      }
+    }, [status]);
+    
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted">
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -33,7 +44,7 @@ export default function SignIn() {
               </p>
               <Button 
                 className="w-full"
-                onClick={() => signIn('google')}
+                onClick={() => signIn('google', { callbackUrl: '/' })}
               >
                 <Image
                   src="https://authjs.dev/img/providers/google.svg"
