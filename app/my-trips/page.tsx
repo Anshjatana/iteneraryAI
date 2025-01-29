@@ -50,7 +50,7 @@ export default function MyTrips() {
       const userId = session?.user?.email;
 
       try {
-        const response = await fetch(`http://localhost:8000/api/itineraries/user/${userId}`);
+        const response = await fetch(`https://be-itenerary-ai.vercel.app/api/itineraries/user/${userId}`);
         if (response.ok) {
           const data = await response.json();
           setTrips(data);

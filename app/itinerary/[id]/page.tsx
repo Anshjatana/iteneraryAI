@@ -42,7 +42,7 @@ export default function ItineraryPage() {
   useEffect(() => {
     const fetchItinerary = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/itineraries/${params.id}`);
+        const response = await fetch(`https://be-itenerary-ai.vercel.app/api/itineraries/${params.id}`);
         if (response.ok) {
           const data = await response.json();
           setItinerary(data);
